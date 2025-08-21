@@ -1,6 +1,6 @@
 /**
  * LexiCore AI – Project Review Tool
- * Version: 1.1.1
+ * Version: 1.1.2
  * Release Date: 21-Aug-2025
  * Description: Main backend entry point for LexiCore AI – serves APIs for frontend (hosted separately).
  */
@@ -40,19 +40,7 @@ const reviewRoute = require('./routes/reviewRoute');
 
 app.use('/api/upload', fileUploadRoute);
 
-// Shortcut for greetings
-app.post('/api/review/:projectId', async (req, res, next) => {
-  const greetings = ['hi', 'hello', 'hey', 'yo'];
-  const prompt = req.body?.prompt || '';
-  if (prompt && greetings.includes(prompt.toLowerCase().trim())) {
-    return res.json({
-      message: 'Hey there! How can I help you with your project today?'
-    });
-  }
-  next(); // pass to normal reviewRoute
-});
-
-// AI review route
+// AI review route (with greetings shortcut handled in reviewRoute.js)
 app.use('/api/review', reviewRoute);
 
 // Serve projects.json directly
