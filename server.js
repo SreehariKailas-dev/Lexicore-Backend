@@ -5,7 +5,6 @@
  * Description: Main backend entry point for LexiCore AI – serves APIs for frontend (hosted separately).
  */
 
-// backend/server.js
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -21,7 +20,7 @@ const PORT = process.env.PORT || 3001;
 // -------------------- MIDDLEWARE --------------------
 app.use(
   cors({
-    origin: "*", // allow all (for Netlify frontend)
+    origin: "*", // allow all (Netlify frontend)
     methods: "GET,POST,PUT,DELETE,OPTIONS",
     allowedHeaders: "Content-Type,Authorization"
   })
@@ -40,7 +39,19 @@ const reviewRoute = require('./routes/reviewRoute');
 
 app.use('/api/upload', fileUploadRoute);
 
-// AI review route (with greetings shortcut handled in reviewRoute.js)
+// Shortcut for greetings
+app.post('/api/review/:projectId', async (req, res, next) => {
+  const greetings = ['hi', 'hello', 'hey', 'yo'];
+  const prompt = req.body?.prompt || '';
+  if (prompt && greetings.includes(prompt.toLowerCase().trim())) {
+    return res.json({
+      message: 'Hey there! How can I help you with your project today?'
+    });
+  }
+  next(); // pass to normal reviewRoute
+});
+
+// AI review route
 app.use('/api/review', reviewRoute);
 
 // Serve projects.json directly
