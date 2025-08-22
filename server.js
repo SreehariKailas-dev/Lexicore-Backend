@@ -5,44 +5,35 @@
  * Description: Main backend entry point for LexiCore AI – serves APIs for frontend (hosted separately).
  */
 
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const fileUploadRoute = require('./routes/fileUploadRoute');
-const reviewRoute = require('./routes/reviewRoute');
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const path = require("path");
 
-dotenv.config();
+const fileUploadRoute = require("./routes/fileUploadRoute");
+const reviewRoute = require("./routes/reviewRoute");
+const projectsRoute = require("./routes/projectsRoute");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
-app.use('/api/upload', fileUploadRoute);
-app.use('/api/review', reviewRoute);
+// Serve uploads statically
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Health check route
-app.get('/', (req, res) => {
-  res.send('✅ Backend is running!');
-});
+// API routes
+app.use("/api/upload", fileUploadRoute);
+app.use("/api/review", reviewRoute);
+app.use("/api/projects", projectsRoute);
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
-
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error('❌ Server Error:', err.stack);
-  res.status(500).json({ error: 'Something went wrong' });
-});
+// Health check
+app.get("/", (req, res) => res.send("✅ Backend is running"));
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
 
