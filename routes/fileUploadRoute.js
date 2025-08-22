@@ -21,12 +21,11 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadPath),
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const sanitized = file.originalname.replace(/\s+/g, '_'); // replace spaces
+    const sanitized = file.originalname.replace(/\s+/g, '_');
     cb(null, `${uniqueSuffix}-${sanitized}`);
   }
 });
 
-// Only allow PDF uploads
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
@@ -46,29 +45,27 @@ router.post('/', upload.single('pdfFile'), (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Construct safe relative path
-    const pdfFilePath = `/uploads/${req.file.filename}`;
+    const diskPath = path.join(uploadPath, req.file.filename);
+    const urlPath = `/uploads/${req.file.filename}`;
 
-    // Path to projects.json
     const projectsFile = path.join(__dirname, '../projects.json');
     let projects = [];
 
     if (fs.existsSync(projectsFile)) {
       try {
-        const data = fs.readFileSync(projectsFile, 'utf8');
-        projects = JSON.parse(data || '[]');
-      } catch (err) {
-        console.warn('⚠️ projects.json corrupted, resetting file.');
+        projects = JSON.parse(fs.readFileSync(projectsFile, 'utf8') || '[]');
+      } catch {
         projects = [];
       }
     }
 
     const newProject = {
-      id: `${Date.now()}-${Math.round(Math.random() * 1e6)}`, // always unique
+      id: `${Date.now()}-${Math.round(Math.random() * 1e6)}`,
       name,
       description: description || '',
       query,
-      filePath: pdfFilePath
+      filePath: diskPath, // full path for backend
+      fileUrl: urlPath   // relative URL for frontend
     };
 
     projects.push(newProject);
@@ -82,3 +79,4 @@ router.post('/', upload.single('pdfFile'), (req, res) => {
 });
 
 module.exports = router;
+
