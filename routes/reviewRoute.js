@@ -1,34 +1,42 @@
-// routes/reviewRoute.js
 const express = require("express");
 const router = express.Router();
 const pdfParse = require("pdf-parse");
 const fs = require("fs");
+const path = require("path");
+
+const projectsFile = path.join(__dirname, "../projects.json");
 
 router.post("/:id", async (req, res) => {
   try {
-    const { query, projectName, pdfPath } = req.body;
+    const { query } = req.body;
+    const projectId = req.params.id;
 
-    // Validate inputs
-    if (!query || !projectName || !pdfPath) {
-      return res.status(400).json({
-        error: "Missing required fields: query, projectName, or pdfPath",
-        received: req.body
-      });
+    if (!query) {
+      return res.status(400).json({ error: "Missing query in request body" });
     }
 
-    // Read and parse PDF
-    if (!fs.existsSync(pdfPath)) {
-      return res.status(404).json({ error: "PDF file not found", pdfPath });
+    if (!fs.existsSync(projectsFile)) {
+      return res.status(404).json({ error: "No projects found" });
     }
 
-    const pdfBuffer = fs.readFileSync(pdfPath);
+    const projects = JSON.parse(fs.readFileSync(projectsFile, "utf8") || "[]");
+    const project = projects.find(p => p.id === projectId);
+
+    if (!project) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    if (!fs.existsSync(project.filePath)) {
+      return res.status(404).json({ error: "PDF file not found on server" });
+    }
+
+    const pdfBuffer = fs.readFileSync(project.filePath);
     const data = await pdfParse(pdfBuffer);
 
-    // Simple AI-like response
     const found = data.text.includes(query);
     const response = found
-      ? `✅ Found "${query}" in project ${projectName}.`
-      : `❌ Could not find "${query}" in project ${projectName}.`;
+      ? `✅ Found "${query}" in project ${project.name}.`
+      : `❌ Could not find "${query}" in project ${project.name}.`;
 
     res.json({ response });
   } catch (error) {
