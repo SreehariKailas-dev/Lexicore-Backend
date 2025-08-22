@@ -1,6 +1,6 @@
 /**
  * LexiCore AI – Project Review Tool
- * Version: 1.1.2
+ * Version: 1.2.0
  * Release Date: 21-Aug-2025
  * Description: Main backend entry point for LexiCore AI – serves APIs for frontend (hosted separately).
  */
@@ -10,7 +10,6 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const helmet = require('helmet');
-const fs = require('fs');
 
 dotenv.config();
 
@@ -36,10 +35,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // -------------------- ROUTES --------------------
 const fileUploadRoute = require('./routes/fileUploadRoute');
 const reviewRoute = require('./routes/reviewRoute');
+const projectRoute = require('./routes/projectRoute');
 
 app.use('/api/upload', fileUploadRoute);
 
-// Shortcut for greetings
+// Shortcut for greetings before review
 app.post('/api/review/:projectId', async (req, res, next) => {
   const greetings = ['hi', 'hello', 'hey', 'yo'];
   const prompt = req.body?.prompt || '';
@@ -54,26 +54,8 @@ app.post('/api/review/:projectId', async (req, res, next) => {
 // AI review route
 app.use('/api/review', reviewRoute);
 
-// Serve projects.json directly
-app.get('/projects.json', (req, res) => {
-  const projectsFile = path.join(__dirname, 'projects.json');
-
-  if (!fs.existsSync(projectsFile)) return res.json([]);
-
-  fs.readFile(projectsFile, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error reading projects.json:', err);
-      return res.status(500).json({ error: 'Error reading projects file' });
-    }
-
-    try {
-      res.json(JSON.parse(data || '[]'));
-    } catch (parseErr) {
-      console.error('Invalid JSON format in projects.json:', parseErr);
-      res.status(500).json({ error: 'Invalid projects file format' });
-    }
-  });
-});
+// Projects route (CRUD for project metadata)
+app.use('/api/projects', projectRoute);
 
 // -------------------- ROOT ENDPOINT --------------------
 app.get('/', (req, res) => {
