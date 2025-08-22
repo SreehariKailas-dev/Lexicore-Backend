@@ -1,48 +1,39 @@
-// backend/routes/reviewRoute.js
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
-
+// routes/reviewRoute.js
+const express = require("express");
 const router = express.Router();
+const pdfParse = require("pdf-parse");
+const fs = require("fs");
 
-/**
- * POST /api/review/:projectId
- * Handles project review queries.
- */
-router.post('/:projectId', async (req, res) => {
-  const { projectId } = req.params;
-  const { prompt } = req.body;
-
-  if (!prompt || prompt.trim() === "") {
-    return res.status(400).json({ error: "Prompt is required" });
-  }
-
+router.post("/:id", async (req, res) => {
   try {
-    // Load projects.json to check if project exists
-    const projectsFile = path.join(__dirname, '../projects.json');
-    let projects = [];
-    if (fs.existsSync(projectsFile)) {
-      const raw = fs.readFileSync(projectsFile, 'utf8');
-      projects = JSON.parse(raw || "[]");
+    const { query, projectName, pdfPath } = req.body;
+
+    // Validate inputs
+    if (!query || !projectName || !pdfPath) {
+      return res.status(400).json({
+        error: "Missing required fields: query, projectName, or pdfPath",
+        received: req.body
+      });
     }
 
-    const project = projects.find(p => p.id === projectId);
-
-    if (!project) {
-      return res.status(404).json({ error: "Project not found" });
+    // Read and parse PDF
+    if (!fs.existsSync(pdfPath)) {
+      return res.status(404).json({ error: "PDF file not found", pdfPath });
     }
 
-    // Dummy AI Response (replace with OpenRouter/Azure later)
-    const aiResponse = `🔍 Reviewing project "${project.name}" for query: "${prompt}"...`;
+    const pdfBuffer = fs.readFileSync(pdfPath);
+    const data = await pdfParse(pdfBuffer);
 
-    return res.json({
-      projectId,
-      projectName: project.name,
-      response: aiResponse
-    });
+    // Simple AI-like response
+    const found = data.text.includes(query);
+    const response = found
+      ? `✅ Found "${query}" in project ${projectName}.`
+      : `❌ Could not find "${query}" in project ${projectName}.`;
+
+    res.json({ response });
   } catch (error) {
     console.error("Review error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error", details: error.message });
   }
 });
 
