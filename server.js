@@ -35,16 +35,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // -------------------- ROUTES --------------------
-const projectsRoute = require('./routes/projectsRoute'); // 🔥 THIS WAS MISSING!
+const projectRoute = require('./routes/projectRoute'); // ✅ Corrected
 const fileUploadRoute = require('./routes/fileUploadRoute');
 const reviewRoute = require('./routes/reviewRoute');
 
-// 🔥 REGISTER THE PROJECTS ROUTE
-app.use('/api/projects', projectsRoute);
+app.use('/api/projects', projectRoute);
 app.use('/api/upload', fileUploadRoute);
 app.use('/api/review', reviewRoute);
 
-// Serve projects.json directly (keep for backward compatibility)
+// -------------------- SERVE projects.json --------------------
 app.get('/projects.json', (req, res) => {
   const projectsFile = path.join(__dirname, 'projects.json');
 
