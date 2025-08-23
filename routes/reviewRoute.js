@@ -4,6 +4,8 @@ const pdfParse = require("pdf-parse");
 const fs = require("fs");
 const path = require("path");
 
+const { getAIResponse } = require("../services/aiService");
+
 const projectsFile = path.join(__dirname, "../projects.json");
 
 router.post("/:id", async (req, res) => {
@@ -33,12 +35,10 @@ router.post("/:id", async (req, res) => {
     const pdfBuffer = fs.readFileSync(project.filePath);
     const data = await pdfParse(pdfBuffer);
 
-    const found = data.text.includes(query);
-    const response = found
-      ? `✅ Found "${query}" in project ${project.name}.`
-      : `❌ Could not find "${query}" in project ${project.name}.`;
+    // Call AI service instead of manual includes
+    const aiResponse = await getAIResponse(query, data.text);
 
-    res.json({ response });
+    res.json({ response: aiResponse });
   } catch (error) {
     console.error("Review error:", error);
     res.status(500).json({ error: "Internal server error", details: error.message });
